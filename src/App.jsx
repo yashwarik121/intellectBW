@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Info, Menu } from 'lucide-react';
+import Swal from 'sweetalert2';
 import './App.css';
 
 import Dashboard from './pages/Dashboard';
@@ -133,10 +134,17 @@ function App() {
   };
 
   const showToast = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => {
-      setToast({ show: false, message: '' });
-    }, 3000);
+    Swal.mixin({
+      toast: true,
+      position: 'bottom-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      confirmButtonColor: '#b08b00'
+    }).fire({
+      icon: 'success',
+      title: message
+    });
   };
 
   const handleRefreshAttendance = () => {
@@ -277,13 +285,6 @@ function App() {
           onClose={() => setShowRequestsModal(false)} 
           onUpdateStatus={handleUpdateRequestStatus} 
         />
-      )}
-
-      {toast.show && (
-        <div className="toast">
-          <Info size={16} />
-          <span>{toast.message}</span>
-        </div>
       )}
     </div>
   );

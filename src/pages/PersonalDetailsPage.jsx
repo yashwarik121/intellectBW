@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Mail, Phone, Clock, X, Plus, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import Tabs from '../components/Tabs';
 
 function PersonalDetailsPage({ profileData, onSaveProfile }) {
@@ -66,7 +67,12 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       name: `${data.firstName} ${data.lastName}`,
       personalInfo: data
     });
-    alert('Personal Info saved successfully!');
+    Swal.fire({
+      icon: 'success',
+      title: 'Saved Successfully',
+      text: 'Personal info has been updated.',
+      confirmButtonColor: '#b08b00'
+    });
   };
 
   const onSaveAddressInfo = (data) => {
@@ -74,7 +80,12 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       ...profileData,
       addressInfo: data
     });
-    alert('Address Details saved successfully!');
+    Swal.fire({
+      icon: 'success',
+      title: 'Address Saved',
+      text: 'Address details have been updated.',
+      confirmButtonColor: '#b08b00'
+    });
   };
 
   const onSaveContactInfo = (data) => {
@@ -82,7 +93,12 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       ...profileData,
       contactInfo: data
     });
-    alert('Contact Details saved successfully!');
+    Swal.fire({
+      icon: 'success',
+      title: 'Contacts Saved',
+      text: 'Contact details have been updated.',
+      confirmButtonColor: '#b08b00'
+    });
   };
 
   const onAddFamilyMember = (data) => {
@@ -93,12 +109,34 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
     setFamilyMembers([...familyMembers, newMember]);
     setShowFamilyModal(false);
     resetFamilyModal();
+    Swal.fire({
+      icon: 'success',
+      title: 'Member Added',
+      text: 'Family member detail has been recorded.',
+      confirmButtonColor: '#b08b00'
+    });
   };
 
   const onDeleteFamilyMember = (id) => {
-    if (window.confirm('Are you sure you want to remove this family member?')) {
-      setFamilyMembers(familyMembers.filter(m => m.id !== id));
-    }
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to remove this family member?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#b08b00',
+      cancelButtonColor: '#718096',
+      confirmButtonText: 'Yes, remove!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setFamilyMembers(familyMembers.filter(m => m.id !== id));
+        Swal.fire({
+          icon: 'success',
+          title: 'Removed!',
+          text: 'Family member detail has been removed.',
+          confirmButtonColor: '#b08b00'
+        });
+      }
+    });
   };
 
   // Reusable Tabs Config

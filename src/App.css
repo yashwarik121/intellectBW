@@ -1,7 +1,7 @@
 /* Layout Elements */
 .dashboard-container {
   max-width: 1300px;
-  margin: 0 auto;
+  margin: 0 auto 0 70px;
   padding: 24px;
   min-height: 100vh;
 }
@@ -982,20 +982,20 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: 280px;
+  width: 70px;
   background: linear-gradient(180deg, #2c1a16 0%, #150b09 100%);
   z-index: 1000;
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   padding: 20px 0;
   color: #fff;
+  overflow: hidden;
 }
 
 .sidebar-drawer.open {
-  transform: translateX(0);
+  width: 240px;
 }
 
 .sidebar-header-box {
