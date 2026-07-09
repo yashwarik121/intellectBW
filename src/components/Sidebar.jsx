@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   LayoutDashboard,
   Mail,
@@ -17,8 +17,30 @@ const MENU_ITEMS = [
 ];
 
 function Sidebar({ isOpen, setIsOpen, activeItem = 'dashboard', onItemClick }) {
+  const sidebarRef = useRef(null);
+
+  // Close sidebar on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        isOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target) &&
+        !event.target.closest('.hamburger-btn')
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, setIsOpen]);
+
   return (
     <div 
+      ref={sidebarRef}
       className={`sidebar-drawer ${isOpen ? 'open' : ''}`}
       onMouseLeave={() => setIsOpen(false)}
       style={{
