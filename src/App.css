@@ -1,7 +1,10 @@
-/* Layout Elements */
+body {
+  padding-left: 70px;
+}
+
 .dashboard-container {
   max-width: 1300px;
-  margin: 0 auto 0 70px;
+  margin: 0 auto;
   padding: 24px;
   min-height: 100vh;
 }
