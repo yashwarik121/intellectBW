@@ -212,7 +212,7 @@ function App() {
       {/* Sidebar Drawer Component */}
       <Sidebar 
         isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
+        setIsOpen={setSidebarOpen} 
         activeItem={activeSidebarItem}
         onItemClick={handleSidebarClick}
       />
