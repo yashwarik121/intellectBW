@@ -8,6 +8,7 @@ import ApplyLeavePage from './pages/ApplyLeavePage';
 import PersonalDetailsPage from './pages/PersonalDetailsPage';
 import RequestsModal from './components/RequestsModal';
 import Sidebar from './components/Sidebar';
+import { apiRequest } from './utils/api';
 
 // Data Configurations
 const INITIAL_REQUESTS = [
@@ -101,6 +102,11 @@ function App() {
   useEffect(() => {
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     setCurrentDateString(new Date().toLocaleDateString('en-US', options));
+    
+    // GET API 1: Mock fetching initial connection state
+    apiRequest('/200', 'GET')
+      .then(() => console.log('Mock GET 1: Connection test successful (200 OK)'))
+      .catch(err => console.error(err));
   }, []);
 
   useEffect(() => {
@@ -128,9 +134,18 @@ function App() {
       appliedOn: new Date().toISOString().split('T')[0]
     };
 
-    setRequests([newRequest, ...requests]);
-    setCurrentRoute('dashboard');
-    showToast('Leave applied successfully!');
+    // POST API 1: Mock submitting leave application (201 Created)
+    apiRequest('/201', 'POST', newRequest)
+      .then(() => {
+        setRequests([newRequest, ...requests]);
+        setCurrentRoute('dashboard');
+        showToast('Leave applied successfully!');
+        console.log('Mock POST 1: Leave application created (201 Created)');
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Failed to apply leave');
+      });
   };
 
   const showToast = (message) => {
@@ -149,16 +164,25 @@ function App() {
 
   const handleRefreshAttendance = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setAttendanceData((prev) => ({
-        percentage: Math.min(100, Math.round(prev.percentage * 0.95 + Math.random() * 8)),
-        presentDays: prev.presentDays + 1,
-        leaveDays: prev.leaveDays,
-        lateComingDays: Math.max(0, prev.lateComingDays - (Math.random() > 0.5 ? 1 : 0))
-      }));
-      setIsRefreshing(false);
-      showToast('Attendance summary updated successfully!');
-    }, 1000);
+    
+    // GET API 2: Mock fetching updated metrics (200 OK)
+    apiRequest('/200', 'GET')
+      .then(() => {
+        setAttendanceData((prev) => ({
+          percentage: Math.min(100, Math.round(prev.percentage * 0.95 + Math.random() * 8)),
+          presentDays: prev.presentDays + 1,
+          leaveDays: prev.leaveDays,
+          lateComingDays: Math.max(0, prev.lateComingDays - (Math.random() > 0.5 ? 1 : 0))
+        }));
+        setIsRefreshing(false);
+        showToast('Attendance summary updated successfully!');
+        console.log('Mock GET 2: Attendance metrics loaded (200 OK)');
+      })
+      .catch(err => {
+        console.error(err);
+        setIsRefreshing(false);
+        showToast('Failed to refresh data');
+      });
   };
 
   const handleCheckIn = () => {
@@ -184,6 +208,16 @@ function App() {
       requests.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
     );
     showToast(`Request marked as ${newStatus}!`);
+  };
+
+  const handleSaveProfile = (updatedData) => {
+    // POST API 2: Mock saving profile details (202 Accepted)
+    apiRequest('/202', 'POST', updatedData)
+      .then(() => {
+        setProfileData(updatedData);
+        console.log('Mock POST 2: Profile details saved (202 Accepted)');
+      })
+      .catch(err => console.error(err));
   };
 
   const handleSidebarClick = (itemId) => {
@@ -274,7 +308,7 @@ function App() {
       {currentRoute === 'personal-details' && (
         <PersonalDetailsPage 
           profileData={profileData}
-          onSaveProfile={setProfileData}
+          onSaveProfile={handleSaveProfile}
           onNavigate={setCurrentRoute}
         />
       )}
