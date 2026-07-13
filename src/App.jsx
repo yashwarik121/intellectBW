@@ -10,6 +10,10 @@ import RequestsModal from './components/RequestsModal';
 import Sidebar from './components/Sidebar';
 import { apiRequest } from './utils/api';
 
+import { useSelector, useDispatch } from 'react-redux';
+import { addRequest, updateRequestStatus } from './redux/requestsSlice';
+import { updateProfile } from './redux/profileSlice';
+
 // Data Configurations
 const INITIAL_REQUESTS = [
   {
@@ -35,54 +39,19 @@ const INITIAL_REQUESTS = [
 ];
 
 function App() {
+  const dispatch = useDispatch();
+
   // Navigation & Drawer States
   const [currentRoute, setCurrentRoute] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSidebarItem, setActiveSidebarItem] = useState('dashboard');
 
-  // Unified Profile State
-  const [profileData, setProfileData] = useState({
-    name: 'Yash Warik',
-    id: '10056',
-    personalInfo: {
-      title: 'Mr.',
-      gender: 'Male',
-      firstName: 'Yash',
-      lastName: 'Warik',
-      dob: '1998-02-24',
-      placeOfBirth: 'Pune',
-      nationality: 'Indian',
-      bloodGroup: 'A+',
-      maritalStatus: 'Single',
-      children: '0'
-    },
-    addressInfo: {
-      currentStreet: '123, Green Avenue',
-      currentLine2: 'Kothrud',
-      currentCity: 'Pune',
-      currentDistrict: 'Pune',
-      currentState: 'Maharashtra',
-      currentCountry: 'India',
-      currentPin: '411038',
-      sameAsAbove: true,
-      permanentStreet: '123, Green Avenue',
-      permanentLine2: 'Kothrud',
-      permanentCity: 'Pune',
-      permanentDistrict: 'Pune'
-    },
-    contactInfo: {
-      mobile: '+91 9999999999',
-      personalEmail: 'yash.warik@gmail.com',
-      workEmail: 'yash.w@intellectbizware.com',
-      emergencyName: 'Rameez Shaikh',
-      emergencyRelation: 'Manager',
-      emergencyPhone: '+91 9876543210'
-    }
-  });
+  // Redux Selectors
+  const profileData = useSelector((state) => state.profile);
+  const requests = useSelector((state) => state.requests);
 
   // Component State
   const [showRequestsModal, setShowRequestsModal] = useState(false);
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [toast, setToast] = useState({ show: false, message: '' });
   const [attendanceData, setAttendanceData] = useState({
     percentage: 125,
@@ -137,7 +106,7 @@ function App() {
     // POST API 1: Mock submitting leave application (201 Created)
     apiRequest('/201', 'POST', newRequest)
       .then(() => {
-        setRequests([newRequest, ...requests]);
+        dispatch(addRequest(newRequest));
         setCurrentRoute('dashboard');
         showToast('Leave applied successfully!');
         console.log('Mock POST 1: Leave application created (201 Created)');
@@ -204,9 +173,7 @@ function App() {
   };
 
   const handleUpdateRequestStatus = (id, newStatus) => {
-    setRequests(
-      requests.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
-    );
+    dispatch(updateRequestStatus({ id, status: newStatus }));
     showToast(`Request marked as ${newStatus}!`);
   };
 
@@ -214,7 +181,7 @@ function App() {
     // POST API 2: Mock saving profile details (202 Accepted)
     apiRequest('/202', 'POST', updatedData)
       .then(() => {
-        setProfileData(updatedData);
+        dispatch(updateProfile(updatedData));
         console.log('Mock POST 2: Profile details saved (202 Accepted)');
       })
       .catch(err => console.error(err));
