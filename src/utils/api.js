@@ -1,11 +1,14 @@
+import axios from 'axios';
+
 const BASE_URL = 'https://httpstat.us';
 
-// Simple API helper for GET/POST requests
+// Simple API helper using Axios for GET/POST requests
 export async function apiRequest(endpoint, method = 'GET', data = null) {
   const url = `${BASE_URL}${endpoint}`;
   
   const config = {
     method: method.toUpperCase(),
+    url,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
@@ -13,23 +16,14 @@ export async function apiRequest(endpoint, method = 'GET', data = null) {
   };
 
   if (data && (config.method === 'POST' || config.method === 'PUT')) {
-    config.body = JSON.stringify(data);
+    config.data = data;
   }
 
   try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return await response.json();
-    }
-    return await response.text();
+    const response = await axios(config);
+    return response.data;
   } catch (error) {
-    console.error(`Failed to fetch from ${url}:`, error);
+    console.error(`Axios request failed to ${url}:`, error);
     throw error;
   }
 }
