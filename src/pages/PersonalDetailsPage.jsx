@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Mail, Phone, Clock, X, Plus, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import Tabs from '../components/Tabs';
 
 function PersonalDetailsPage({ profileData, onSaveProfile }) {
+  const [step, setStep] = useState(1); // Steps 1 to 4
   const [familyMembers, setFamilyMembers] = useState([
     {
       id: 1,
@@ -19,19 +19,16 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   ]);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
 
-  // Forms
-  const { register: regPersonal, handleSubmit: handlePersonalSubmit } = useForm({
-    defaultValues: profileData.personalInfo
+  // Single Master Form for Multi-Stepper
+  const { register, handleSubmit, trigger, watch, setValue } = useForm({
+    defaultValues: {
+      ...profileData.personalInfo,
+      ...profileData.addressInfo,
+      ...profileData.contactInfo
+    }
   });
 
-  const { register: regAddress, handleSubmit: handleAddressSubmit, watch: watchAddress, setValue: setAddressValue } = useForm({
-    defaultValues: profileData.addressInfo
-  });
-
-  const { register: regContact, handleSubmit: handleContactSubmit } = useForm({
-    defaultValues: profileData.contactInfo
-  });
-
+  // Modal form
   const { register: regFamilyModal, handleSubmit: handleFamilyModalSubmit, reset: resetFamilyModal } = useForm({
     defaultValues: {
       name: '',
@@ -44,63 +41,114 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
     }
   });
 
-  // Watch for Address checkbox
-  const watchSameAsAbove = watchAddress('sameAsAbove');
-  const watchCurrentStreet = watchAddress('currentStreet');
-  const watchCurrentLine2 = watchAddress('currentLine2');
-  const watchCurrentCity = watchAddress('currentCity');
-  const watchCurrentDistrict = watchAddress('currentDistrict');
+  // Watch for Address autofill
+  const watchSameAsAbove = watch('sameAsAbove');
+  const watchCurrentStreet = watch('currentStreet');
+  const watchCurrentLine2 = watch('currentLine2');
+  const watchCurrentCity = watch('currentCity');
+  const watchCurrentDistrict = watch('currentDistrict');
 
   React.useEffect(() => {
     if (watchSameAsAbove) {
-      setAddressValue('permanentStreet', watchCurrentStreet || '');
-      setAddressValue('permanentLine2', watchCurrentLine2 || '');
-      setAddressValue('permanentCity', watchCurrentCity || '');
-      setAddressValue('permanentDistrict', watchCurrentDistrict || '');
+      setValue('permanentStreet', watchCurrentStreet || '');
+      setValue('permanentLine2', watchCurrentLine2 || '');
+      setValue('permanentCity', watchCurrentCity || '');
+      setValue('permanentDistrict', watchCurrentDistrict || '');
     }
-  }, [watchSameAsAbove, watchCurrentStreet, watchCurrentLine2, watchCurrentCity, watchCurrentDistrict, setAddressValue]);
+  }, [watchSameAsAbove, watchCurrentStreet, watchCurrentLine2, watchCurrentCity, watchCurrentDistrict, setValue]);
 
-  // Submit Handlers
-  const onSavePersonalInfo = (data) => {
-    onSaveProfile({
+  // Validation function per step
+  const validateStep = async (currentStep) => {
+    let fields = [];
+    if (currentStep === 1) {
+      fields = ['title', 'gender', 'firstName', 'lastName', 'dob', 'placeOfBirth', 'nationality', 'bloodGroup', 'maritalStatus'];
+    } else if (currentStep === 2) {
+      fields = ['currentStreet', 'currentCity', 'currentDistrict', 'currentState', 'currentCountry', 'currentPin'];
+      if (!watchSameAsAbove) {
+        fields.push('permanentStreet', 'permanentCity', 'permanentDistrict');
+      }
+    } else if (currentStep === 4) {
+      fields = ['mobile', 'personalEmail', 'workEmail', 'emergencyName', 'emergencyRelation', 'emergencyPhone'];
+    }
+    return await trigger(fields);
+  };
+
+  // Navigations
+  const handleNext = async () => {
+    const isValid = await validateStep(step);
+    if (isValid) {
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+
+  const handleTabClick = async (targetStep) => {
+    if (targetStep === step) return;
+    if (targetStep > step) {
+      // Validate all steps in between
+      for (let s = step; s < targetStep; s++) {
+        const isValid = await validateStep(s);
+        if (!isValid) return; // Stop if validation fails
+      }
+    }
+    setStep(targetStep);
+  };
+
+  // Final Submit
+  const onSubmitAll = (data) => {
+    // Structure back into profile categories
+    const updatedProfile = {
       ...profileData,
       name: `${data.firstName} ${data.lastName}`,
-      personalInfo: data
-    });
+      personalInfo: {
+        title: data.title,
+        gender: data.gender,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dob: data.dob,
+        placeOfBirth: data.placeOfBirth,
+        nationality: data.nationality,
+        bloodGroup: data.bloodGroup,
+        maritalStatus: data.maritalStatus,
+        children: data.children
+      },
+      addressInfo: {
+        currentStreet: data.currentStreet,
+        currentLine2: data.currentLine2,
+        currentCity: data.currentCity,
+        currentDistrict: data.currentDistrict,
+        currentState: data.currentState,
+        currentCountry: data.currentCountry,
+        currentPin: data.currentPin,
+        sameAsAbove: data.sameAsAbove,
+        permanentStreet: data.permanentStreet,
+        permanentLine2: data.permanentLine2,
+        permanentCity: data.permanentCity,
+        permanentDistrict: data.permanentDistrict
+      },
+      contactInfo: {
+        mobile: data.mobile,
+        personalEmail: data.personalEmail,
+        workEmail: data.workEmail,
+        emergencyName: data.emergencyName,
+        emergencyRelation: data.emergencyRelation,
+        emergencyPhone: data.emergencyPhone
+      }
+    };
+
+    onSaveProfile(updatedProfile);
     Swal.fire({
       icon: 'success',
       title: 'Saved Successfully',
-      text: 'Personal info has been updated.',
+      text: 'All personal details and form steps saved successfully.',
       confirmButtonColor: '#b08b00'
     });
   };
 
-  const onSaveAddressInfo = (data) => {
-    onSaveProfile({
-      ...profileData,
-      addressInfo: data
-    });
-    Swal.fire({
-      icon: 'success',
-      title: 'Address Saved',
-      text: 'Address details have been updated.',
-      confirmButtonColor: '#b08b00'
-    });
-  };
-
-  const onSaveContactInfo = (data) => {
-    onSaveProfile({
-      ...profileData,
-      contactInfo: data
-    });
-    Swal.fire({
-      icon: 'success',
-      title: 'Contacts Saved',
-      text: 'Contact details have been updated.',
-      confirmButtonColor: '#b08b00'
-    });
-  };
-
+  // Family Helpers
   const onAddFamilyMember = (data) => {
     const newMember = {
       id: Date.now(),
@@ -138,283 +186,6 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       }
     });
   };
-
-  // Reusable Tabs Config
-  const tabsConfig = [
-    {
-      id: 'personal-info',
-      label: 'Personal Info',
-      content: (
-        <form onSubmit={handlePersonalSubmit(onSavePersonalInfo)}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Personal Info</h3>
-          <div className="form-grid">
-            
-            <div className="form-group">
-              <label className="form-label">Title <span className="required">*</span></label>
-              <select className="form-select" {...regPersonal('title', { required: true })}>
-                <option value="Mr.">Mr.</option>
-                <option value="Ms.">Ms.</option>
-                <option value="Mrs.">Mrs.</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Gender <span className="required">*</span></label>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
-                <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="radio" value="Male" {...regPersonal('gender', { required: true })} /> Male
-                </label>
-                <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="radio" value="Female" {...regPersonal('gender', { required: true })} /> Female
-                </label>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">First Name <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regPersonal('firstName', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Last Name <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regPersonal('lastName', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Date of Birth <span className="required">*</span></label>
-              <input className="form-input" type="date" {...regPersonal('dob', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Place of Birth <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regPersonal('placeOfBirth', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Nationality <span className="required">*</span></label>
-              <select className="form-select" {...regPersonal('nationality', { required: true })}>
-                <option value="Indian">Indian</option>
-                <option value="Others">Others</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Blood Group <span className="required">*</span></label>
-              <select className="form-select" {...regPersonal('bloodGroup', { required: true })}>
-                <option value="A+">A+</option>
-                <option value="B+">B+</option>
-                <option value="O+">O+</option>
-                <option value="AB+">AB+</option>
-                <option value="A-">A-</option>
-                <option value="B-">B-</option>
-                <option value="O-">O-</option>
-                <option value="AB-">AB-</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Marital Status <span className="required">*</span></label>
-              <select className="form-select" {...regPersonal('maritalStatus', { required: true })}>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Divorced">Divorced</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">No of Children</label>
-              <input className="form-input" type="number" {...regPersonal('children')} />
-            </div>
-
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <button className="btn-form-submit" type="submit">Save Info</button>
-          </div>
-        </form>
-      )
-    },
-    {
-      id: 'address',
-      label: 'Address',
-      content: (
-        <form onSubmit={handleAddressSubmit(onSaveAddressInfo)}>
-          <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>Current Address Details</h3>
-          <div className="form-grid" style={{ marginBottom: '24px' }}>
-            <div className="form-group form-field-full">
-              <label className="form-label">Street and House No <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regAddress('currentStreet', { required: true })} />
-            </div>
-            <div className="form-group form-field-full">
-              <label className="form-label">Line 2</label>
-              <input className="form-input" type="text" {...regAddress('currentLine2')} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">City <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regAddress('currentCity', { required: true })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">District <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regAddress('currentDistrict', { required: true })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">State <span className="required">*</span></label>
-              <select className="form-select" {...regAddress('currentState', { required: true })}>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Karnataka">Karnataka</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Country <span className="required">*</span></label>
-              <select className="form-select" {...regAddress('currentCountry', { required: true })}>
-                <option value="India">India</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pin Code <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regAddress('currentPin', { required: true })} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-            <input type="checkbox" id="sameAsAbove" {...regAddress('sameAsAbove')} />
-            <label htmlFor="sameAsAbove" style={{ fontSize: '13px', fontWeight: '600' }}>Same as Above</label>
-          </div>
-
-          <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>Permanent Address Details</h3>
-          <div className="form-grid">
-            <div className="form-group form-field-full">
-              <label className="form-label">Street and House No <span className="required">*</span></label>
-              <input className="form-input" type="text" disabled={watchSameAsAbove} {...regAddress('permanentStreet', { required: !watchSameAsAbove })} />
-            </div>
-            <div className="form-group form-field-full">
-              <label className="form-label">Line 2</label>
-              <input className="form-input" type="text" disabled={watchSameAsAbove} {...regAddress('permanentLine2')} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">City <span className="required">*</span></label>
-              <input className="form-input" type="text" disabled={watchSameAsAbove} {...regAddress('permanentCity', { required: !watchSameAsAbove })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">District <span className="required">*</span></label>
-              <input className="form-input" type="text" disabled={watchSameAsAbove} {...regAddress('permanentDistrict', { required: !watchSameAsAbove })} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <button className="btn-form-submit" type="submit">Save Address</button>
-          </div>
-        </form>
-      )
-    },
-    {
-      id: 'family',
-      label: 'Family',
-      content: (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Family Members</h3>
-            <button 
-              type="button" 
-              className="btn-apply-leave" 
-              style={{ margin: 0, padding: '6px 12px', fontSize: '12px' }}
-              onClick={() => setShowFamilyModal(true)}
-            >
-              <Plus size={14} /> Add Member
-            </button>
-          </div>
-
-          <table className="modal-requests-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Relation</th>
-                <th>Gender</th>
-                <th>DOB</th>
-                <th>Education</th>
-                <th>Occupation</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {familyMembers.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-light)' }}>No family details added yet.</td>
-                </tr>
-              ) : (
-                familyMembers.map((member) => (
-                  <tr key={member.id}>
-                    <td>{member.name}</td>
-                    <td>{member.relation}</td>
-                    <td>{member.gender}</td>
-                    <td>{member.dob}</td>
-                    <td>{member.education || 'NA'}</td>
-                    <td>{member.occupation || 'NA'}</td>
-                    <td>
-                      <button 
-                        className="btn-action-small btn-reject" 
-                        onClick={() => onDeleteFamilyMember(member.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Trash2 size={12} /> Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )
-    },
-    {
-      id: 'contact',
-      label: 'Contact',
-      content: (
-        <form onSubmit={handleContactSubmit(onSaveContactInfo)}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Contact Info</h3>
-          <div className="form-grid">
-            
-            <div className="form-group">
-              <label className="form-label">Mobile Number <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regContact('mobile', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Personal Email <span className="required">*</span></label>
-              <input className="form-input" type="email" {...regContact('personalEmail', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Work Email <span className="required">*</span></label>
-              <input className="form-input" type="email" {...regContact('workEmail', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Emergency Contact Name <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regContact('emergencyName', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Emergency Relation <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regContact('emergencyRelation', { required: true })} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Emergency Contact No <span className="required">*</span></label>
-              <input className="form-input" type="text" {...regContact('emergencyPhone', { required: true })} />
-            </div>
-
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <button className="btn-form-submit" type="submit">Save Contacts</button>
-          </div>
-        </form>
-      )
-    }
-  ];
 
   return (
     <div className="personal-details-container" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', textAlign: 'left', marginTop: '16px' }}>
@@ -474,9 +245,330 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
         </div>
       </div>
 
-      {/* Right Column: Multi-tab Profile View */}
+      {/* Right Column: Multi-Stepper Form */}
       <div className="dash-card" style={{ padding: '24px' }}>
-        <Tabs tabs={tabsConfig} defaultActiveTab="personal-info" />
+        
+        {/* Step Indicator Tabs */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '20px', 
+          borderBottom: '1px solid var(--border-color)', 
+          marginBottom: '24px', 
+          paddingBottom: '12px', 
+          overflowX: 'auto' 
+        }}>
+          {[
+            { id: 1, label: 'Personal Info' },
+            { id: 2, label: 'Address' },
+            { id: 3, label: 'Family' },
+            { id: 4, label: 'Contact' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleTabClick(tab.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px 8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                color: step === tab.id ? 'var(--primary)' : 'var(--text-muted)',
+                borderBottom: step === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+                transition: 'var(--transition)'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Master Form Wrapper */}
+        <form onSubmit={handleSubmit(onSubmitAll)}>
+          
+          {/* Step 1: Personal Info */}
+          {step === 1 && (
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Personal Info</h3>
+              <div className="form-grid">
+                
+                <div className="form-group">
+                  <label className="form-label">Title <span className="required">*</span></label>
+                  <select className="form-select" {...register('title', { required: true })}>
+                    <option value="Mr.">Mr.</option>
+                    <option value="Ms.">Ms.</option>
+                    <option value="Mrs.">Mrs.</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Gender <span className="required">*</span></label>
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                    <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input type="radio" value="Male" {...register('gender', { required: true })} /> Male
+                    </label>
+                    <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input type="radio" value="Female" {...register('gender', { required: true })} /> Female
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">First Name <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('firstName', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Last Name <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('lastName', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Date of Birth <span className="required">*</span></label>
+                  <input className="form-input" type="date" {...register('dob', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Place of Birth <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('placeOfBirth', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Nationality <span className="required">*</span></label>
+                  <select className="form-select" {...register('nationality', { required: true })}>
+                    <option value="Indian">Indian</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Blood Group <span className="required">*</span></label>
+                  <select className="form-select" {...register('bloodGroup', { required: true })}>
+                    <option value="A+">A+</option>
+                    <option value="B+">B+</option>
+                    <option value="O+">O+</option>
+                    <option value="AB+">AB+</option>
+                    <option value="A-">A-</option>
+                    <option value="B-">B-</option>
+                    <option value="O-">O-</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Marital Status <span className="required">*</span></label>
+                  <select className="form-select" {...register('maritalStatus', { required: true })}>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">No of Children</label>
+                  <input className="form-input" type="number" {...register('children')} />
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Address */}
+          {step === 2 && (
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>Current Address Details</h3>
+              <div className="form-grid" style={{ marginBottom: '24px' }}>
+                <div className="form-group form-field-full">
+                  <label className="form-label">Street and House No <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('currentStreet', { required: true })} />
+                </div>
+                <div className="form-group form-field-full">
+                  <label className="form-label">Line 2</label>
+                  <input className="form-input" type="text" {...register('currentLine2')} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">City <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('currentCity', { required: true })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">District <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('currentDistrict', { required: true })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">State <span className="required">*</span></label>
+                  <select className="form-select" {...register('currentState', { required: true })}>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Karnataka">Karnataka</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Country <span className="required">*</span></label>
+                  <select className="form-select" {...register('currentCountry', { required: true })}>
+                    <option value="India">India</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Pin Code <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('currentPin', { required: true })} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                <input type="checkbox" id="sameAsAbove" {...register('sameAsAbove')} />
+                <label htmlFor="sameAsAbove" style={{ fontSize: '13px', fontWeight: '600' }}>Same as Above</label>
+              </div>
+
+              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>Permanent Address Details</h3>
+              <div className="form-grid">
+                <div className="form-group form-field-full">
+                  <label className="form-label">Street and House No <span className="required">*</span></label>
+                  <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentStreet', { required: !watchSameAsAbove })} />
+                </div>
+                <div className="form-group form-field-full">
+                  <label className="form-label">Line 2</label>
+                  <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentLine2')} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">City <span className="required">*</span></label>
+                  <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentCity', { required: !watchSameAsAbove })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">District <span className="required">*</span></label>
+                  <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentDistrict', { required: !watchSameAsAbove })} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Family */}
+          {step === 3 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Family Members</h3>
+                <button 
+                  type="button" 
+                  className="btn-apply-leave" 
+                  style={{ margin: 0, padding: '6px 12px', fontSize: '12px' }}
+                  onClick={() => setShowFamilyModal(true)}
+                >
+                  <Plus size={14} /> Add Member
+                </button>
+              </div>
+
+              <table className="modal-requests-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Relation</th>
+                    <th>Gender</th>
+                    <th>DOB</th>
+                    <th>Education</th>
+                    <th>Occupation</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {familyMembers.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-light)' }}>No family details added yet.</td>
+                    </tr>
+                  ) : (
+                    familyMembers.map((member) => (
+                      <tr key={member.id}>
+                        <td>{member.name}</td>
+                        <td>{member.relation}</td>
+                        <td>{member.gender}</td>
+                        <td>{member.dob}</td>
+                        <td>{member.education || 'NA'}</td>
+                        <td>{member.occupation || 'NA'}</td>
+                        <td>
+                          <button 
+                            type="button"
+                            className="btn-action-small btn-reject" 
+                            onClick={() => onDeleteFamilyMember(member.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Trash2 size={12} /> Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Step 4: Contact */}
+          {step === 4 && (
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Contact Info</h3>
+              <div className="form-grid">
+                
+                <div className="form-group">
+                  <label className="form-label">Mobile Number <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('mobile', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Personal Email <span className="required">*</span></label>
+                  <input className="form-input" type="email" {...register('personalEmail', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Work Email <span className="required">*</span></label>
+                  <input className="form-input" type="email" {...register('workEmail', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Emergency Contact Name <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('emergencyName', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Emergency Relation <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('emergencyRelation', { required: true })} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Emergency Contact No <span className="required">*</span></label>
+                  <input className="form-input" type="text" {...register('emergencyPhone', { required: true })} />
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Stepper Navigation Buttons */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            marginTop: '24px', 
+            borderTop: '1px solid var(--border-color)', 
+            paddingTop: '20px' 
+          }}>
+            {step > 1 && (
+              <button type="button" className="btn-form-cancel" onClick={handleBack}>
+                Back
+              </button>
+            )}
+            <div style={{ marginLeft: 'auto' }}>
+              {step < 4 ? (
+                <button type="button" className="btn-form-submit" onClick={handleNext}>
+                  Next
+                </button>
+              ) : (
+                <button type="submit" className="btn-form-submit">
+                  Submit & Save All
+                </button>
+              )}
+            </div>
+          </div>
+
+        </form>
+
       </div>
 
       {/* Family Member Add Modal */}
