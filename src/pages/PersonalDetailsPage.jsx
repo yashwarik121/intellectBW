@@ -1,5 +1,7 @@
+// Personal Details Page - Refactored to React Hook Form Multi-Stepper Form
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSelector } from 'react-redux';
 import { Mail, Phone, Clock, X, Plus, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -19,8 +21,11 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   ]);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
 
+  // Retrieve data from Redux
+  const reduxProfile = useSelector((state) => state.profile);
+
   // Single Master Form for Multi-Stepper
-  const { register, handleSubmit, trigger, watch, setValue } = useForm({
+  const { register, handleSubmit, trigger, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       ...profileData.personalInfo,
       ...profileData.addressInfo,
@@ -56,6 +61,11 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       setValue('permanentDistrict', watchCurrentDistrict || '');
     }
   }, [watchSameAsAbove, watchCurrentStreet, watchCurrentLine2, watchCurrentCity, watchCurrentDistrict, setValue]);
+
+  // Console log Redux data on step change
+  React.useEffect(() => {
+    console.log(`[Tab ${step}] Current Redux Profile Data:`, reduxProfile);
+  }, [step, reduxProfile]);
 
   // Validation function per step
   const validateStep = async (currentStep) => {
@@ -300,6 +310,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                     <option value="Ms.">Ms.</option>
                     <option value="Mrs.">Mrs.</option>
                   </select>
+                  {errors.title && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
@@ -312,26 +323,31 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                       <input type="radio" value="Female" {...register('gender', { required: true })} /> Female
                     </label>
                   </div>
+                  {errors.gender && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">First Name <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('firstName', { required: true })} />
+                  {errors.firstName && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Last Name <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('lastName', { required: true })} />
+                  {errors.lastName && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Date of Birth <span className="required">*</span></label>
                   <input className="form-input" type="date" {...register('dob', { required: true })} />
+                  {errors.dob && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Place of Birth <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('placeOfBirth', { required: true })} />
+                  {errors.placeOfBirth && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
@@ -340,6 +356,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                     <option value="Indian">Indian</option>
                     <option value="Others">Others</option>
                   </select>
+                  {errors.nationality && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
@@ -354,6 +371,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                     <option value="O-">O-</option>
                     <option value="AB-">AB-</option>
                   </select>
+                  {errors.bloodGroup && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
@@ -363,6 +381,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                     <option value="Married">Married</option>
                     <option value="Divorced">Divorced</option>
                   </select>
+                  {errors.maritalStatus && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
@@ -370,6 +389,17 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                   <input className="form-input" type="number" {...register('children')} />
                 </div>
 
+              </div>
+
+              {/* Redux Data display for Tab 1 */}
+              <div style={{ marginTop: '20px', padding: '12px', background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary-border)' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>Redux Store Value (Tab 1):</h4>
+                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
+                  <strong>Profile Name:</strong> {reduxProfile.name}
+                </p>
+                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
+                  <strong>Date of Birth:</strong> {reduxProfile.personalInfo?.dob}
+                </p>
               </div>
             </div>
           )}
@@ -382,6 +412,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 <div className="form-group form-field-full">
                   <label className="form-label">Street and House No <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('currentStreet', { required: true })} />
+                  {errors.currentStreet && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group form-field-full">
                   <label className="form-label">Line 2</label>
@@ -390,10 +421,12 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 <div className="form-group">
                   <label className="form-label">City <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('currentCity', { required: true })} />
+                  {errors.currentCity && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">District <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('currentDistrict', { required: true })} />
+                  {errors.currentDistrict && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">State <span className="required">*</span></label>
@@ -402,16 +435,19 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                     <option value="Delhi">Delhi</option>
                     <option value="Karnataka">Karnataka</option>
                   </select>
+                  {errors.currentState && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Country <span className="required">*</span></label>
                   <select className="form-select" {...register('currentCountry', { required: true })}>
                     <option value="India">India</option>
                   </select>
+                  {errors.currentCountry && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Pin Code <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('currentPin', { required: true })} />
+                  {errors.currentPin && <span className="form-error">Please fill this field</span>}
                 </div>
               </div>
 
@@ -425,6 +461,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 <div className="form-group form-field-full">
                   <label className="form-label">Street and House No <span className="required">*</span></label>
                   <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentStreet', { required: !watchSameAsAbove })} />
+                  {!watchSameAsAbove && errors.permanentStreet && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group form-field-full">
                   <label className="form-label">Line 2</label>
@@ -433,11 +470,24 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 <div className="form-group">
                   <label className="form-label">City <span className="required">*</span></label>
                   <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentCity', { required: !watchSameAsAbove })} />
+                  {!watchSameAsAbove && errors.permanentCity && <span className="form-error">Please fill this field</span>}
                 </div>
                 <div className="form-group">
                   <label className="form-label">District <span className="required">*</span></label>
                   <input className="form-input" type="text" disabled={watchSameAsAbove} {...register('permanentDistrict', { required: !watchSameAsAbove })} />
+                  {!watchSameAsAbove && errors.permanentDistrict && <span className="form-error">Please fill this field</span>}
                 </div>
+              </div>
+
+              {/* Redux Data display for Tab 2 */}
+              <div style={{ marginTop: '20px', padding: '12px', background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary-border)' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>Redux Store Value (Tab 2):</h4>
+                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
+                  <strong>Current City:</strong> {reduxProfile.addressInfo?.currentCity}
+                </p>
+                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
+                  <strong>Pin Code:</strong> {reduxProfile.addressInfo?.currentPin}
+                </p>
               </div>
             </div>
           )}
@@ -510,31 +560,37 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 <div className="form-group">
                   <label className="form-label">Mobile Number <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('mobile', { required: true })} />
+                  {errors.mobile && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Personal Email <span className="required">*</span></label>
                   <input className="form-input" type="email" {...register('personalEmail', { required: true })} />
+                  {errors.personalEmail && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Work Email <span className="required">*</span></label>
                   <input className="form-input" type="email" {...register('workEmail', { required: true })} />
+                  {errors.workEmail && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Emergency Contact Name <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('emergencyName', { required: true })} />
+                  {errors.emergencyName && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Emergency Relation <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('emergencyRelation', { required: true })} />
+                  {errors.emergencyRelation && <span className="form-error">Please fill this field</span>}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Emergency Contact No <span className="required">*</span></label>
                   <input className="form-input" type="text" {...register('emergencyPhone', { required: true })} />
+                  {errors.emergencyPhone && <span className="form-error">Please fill this field</span>}
                 </div>
 
               </div>
@@ -654,3 +710,4 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
 }
 
 export default PersonalDetailsPage;
+
