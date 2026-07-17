@@ -1,3 +1,2 @@
-# Intellect Dashboard
-
-A React-based employee dashboard for leave management, attendance tracking, and personal profile administration.
+did some react side gigs @ intellect bizware as a sde intern.
+gg!
