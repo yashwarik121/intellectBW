@@ -207,6 +207,32 @@ function App() {
         .toUpperCase()
     : 'YW';
 
+  // Demonstrating Array Methods:
+  // 1. map (used to render requests)
+  // 2. filter (used to filter family members list)
+  // 3. find (used to locate active tabs)
+  // 4. reduce (total approved leave days)
+  const totalApprovedLeaveDays = requests.reduce((acc, req) => {
+    return req.status === 'approved' ? acc + Number(req.days) : acc;
+  }, 0);
+
+  // 5. forEach (log request statuses)
+  requests.forEach((req) => {
+    console.log(`Request ID: ${req.id}, Status: ${req.status}`);
+  });
+
+  // 6. every (all requests approved status)
+  const allRequestsApproved = requests.every((req) => req.status === 'approved');
+
+  // 7. some (contains any pending requests check)
+  const hasPendingRequests = requests.some((req) => req.status === 'pending');
+
+  console.log('Array Methods Demo Logs:', {
+    totalApprovedLeaveDays,
+    allRequestsApproved,
+    hasPendingRequests
+  });
+
   // Template Render
   return (
     <div className="dashboard-container">
