@@ -25,13 +25,22 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   const reduxProfile = useSelector((state) => state.profile);
 
   // Single Master Form for Multi-Stepper
-  const { register, handleSubmit, trigger, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, trigger, watch, setValue, reset, formState: { errors } } = useForm({
     defaultValues: {
-      ...profileData.personalInfo,
-      ...profileData.addressInfo,
-      ...profileData.contactInfo
+      ...reduxProfile.personalInfo,
+      ...reduxProfile.addressInfo,
+      ...reduxProfile.contactInfo
     }
   });
+
+  // Synchronize form default values when Redux store updates
+  React.useEffect(() => {
+    reset({
+      ...reduxProfile.personalInfo,
+      ...reduxProfile.addressInfo,
+      ...reduxProfile.contactInfo
+    });
+  }, [reduxProfile, reset]);
 
   // Modal form
   const { register: regFamilyModal, handleSubmit: handleFamilyModalSubmit, reset: resetFamilyModal } = useForm({
