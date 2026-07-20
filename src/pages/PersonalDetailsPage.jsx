@@ -79,42 +79,46 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   // Save current step data to Redux helper
   const handleSaveStepData = () => {
     const data = getValues();
+    const firstName = data.firstName !== undefined ? data.firstName : (reduxProfile.personalInfo?.firstName || '');
+    const lastName = data.lastName !== undefined ? data.lastName : (reduxProfile.personalInfo?.lastName || '');
+    const name = `${firstName} ${lastName}`.trim() || reduxProfile.name;
+
     const updatedProfile = {
-      ...profileData,
-      name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || profileData.name,
+      ...reduxProfile,
+      name: name,
       personalInfo: {
-        title: data.title,
-        gender: data.gender,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        dob: data.dob,
-        placeOfBirth: data.placeOfBirth,
-        nationality: data.nationality,
-        bloodGroup: data.bloodGroup,
-        maritalStatus: data.maritalStatus,
-        children: data.children
+        title: data.title ?? reduxProfile.personalInfo?.title,
+        gender: data.gender ?? reduxProfile.personalInfo?.gender,
+        firstName: firstName,
+        lastName: lastName,
+        dob: data.dob ?? reduxProfile.personalInfo?.dob,
+        placeOfBirth: data.placeOfBirth ?? reduxProfile.personalInfo?.placeOfBirth,
+        nationality: data.nationality ?? reduxProfile.personalInfo?.nationality,
+        bloodGroup: data.bloodGroup ?? reduxProfile.personalInfo?.bloodGroup,
+        maritalStatus: data.maritalStatus ?? reduxProfile.personalInfo?.maritalStatus,
+        children: data.children ?? reduxProfile.personalInfo?.children
       },
       addressInfo: {
-        currentStreet: data.currentStreet,
-        currentLine2: data.currentLine2,
-        currentCity: data.currentCity,
-        currentDistrict: data.currentDistrict,
-        currentState: data.currentState,
-        currentCountry: data.currentCountry,
-        currentPin: data.currentPin,
-        sameAsAbove: data.sameAsAbove,
-        permanentStreet: data.permanentStreet,
-        permanentLine2: data.permanentLine2,
-        permanentCity: data.permanentCity,
-        permanentDistrict: data.permanentDistrict
+        currentStreet: data.currentStreet ?? reduxProfile.addressInfo?.currentStreet,
+        currentLine2: data.currentLine2 ?? reduxProfile.addressInfo?.currentLine2,
+        currentCity: data.currentCity ?? reduxProfile.addressInfo?.currentCity,
+        currentDistrict: data.currentDistrict ?? reduxProfile.addressInfo?.currentDistrict,
+        currentState: data.currentState ?? reduxProfile.addressInfo?.currentState,
+        currentCountry: data.currentCountry ?? reduxProfile.addressInfo?.currentCountry,
+        currentPin: data.currentPin ?? reduxProfile.addressInfo?.currentPin,
+        sameAsAbove: data.sameAsAbove ?? reduxProfile.addressInfo?.sameAsAbove,
+        permanentStreet: data.permanentStreet ?? reduxProfile.addressInfo?.permanentStreet,
+        permanentLine2: data.permanentLine2 ?? reduxProfile.addressInfo?.permanentLine2,
+        permanentCity: data.permanentCity ?? reduxProfile.addressInfo?.permanentCity,
+        permanentDistrict: data.permanentDistrict ?? reduxProfile.addressInfo?.permanentDistrict
       },
       contactInfo: {
-        mobile: data.mobile,
-        personalEmail: data.personalEmail,
-        workEmail: data.workEmail,
-        emergencyName: data.emergencyName,
-        emergencyRelation: data.emergencyRelation,
-        emergencyPhone: data.emergencyPhone
+        mobile: data.mobile ?? reduxProfile.contactInfo?.mobile,
+        personalEmail: data.personalEmail ?? reduxProfile.contactInfo?.personalEmail,
+        workEmail: data.workEmail ?? reduxProfile.contactInfo?.workEmail,
+        emergencyName: data.emergencyName ?? reduxProfile.contactInfo?.emergencyName,
+        emergencyRelation: data.emergencyRelation ?? reduxProfile.contactInfo?.emergencyRelation,
+        emergencyPhone: data.emergencyPhone ?? reduxProfile.contactInfo?.emergencyPhone
       }
     };
     onSaveProfile(updatedProfile);
@@ -446,17 +450,6 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
                 </div>
 
               </div>
-
-              {/* Redux Data display for Tab 1 */}
-              <div style={{ marginTop: '20px', padding: '12px', background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary-border)' }}>
-                <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>Redux Store Value (Tab 1):</h4>
-                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
-                  <strong>Profile Name:</strong> {reduxProfile.name}
-                </p>
-                <p style={{ margin: '2px 0', fontSize: '12px', color: 'var(--text-main)' }}>
-                  <strong>Date of Birth:</strong> {reduxProfile.personalInfo?.dob}
-                </p>
-              </div>
             </div>
           )}
 
@@ -653,9 +646,9 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
             </div>
           )}
 
-          {/* Redux Store Value Indicator */}
+          {/* Single Category-Specific Redux Store Value Card */}
           <div style={{
-            marginTop: '20px',
+            marginTop: '24px',
             padding: '16px',
             background: 'var(--bg-main)',
             borderRadius: '8px',
@@ -665,13 +658,59 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
             boxShadow: 'var(--shadow-sm)',
             marginBottom: '16px'
           }}>
-            <h4 style={{ fontWeight: '700', marginBottom: '8px', color: '#b08b00' }}>
-              Redux Store Value (Tab {step}):
+            <h4 style={{ fontWeight: '700', marginBottom: '10px', color: '#b08b00', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ background: '#b08b00', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>
+                {step}
+              </span>
+              Redux Store Value ({step === 1 ? 'Personal Info' : step === 2 ? 'Address' : step === 3 ? 'Family Members' : 'Contact Info'}):
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div><strong>Profile Name:</strong> {reduxProfile.name}</div>
-              <div><strong>Date of Birth:</strong> {reduxProfile.personalInfo?.dob || 'NA'}</div>
-            </div>
+
+            {step === 1 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+                <div><strong>Profile Name:</strong> {reduxProfile.name}</div>
+                <div><strong>Title:</strong> {reduxProfile.personalInfo?.title || 'Mr.'}</div>
+                <div><strong>First Name:</strong> {reduxProfile.personalInfo?.firstName || 'Yash'}</div>
+                <div><strong>Last Name:</strong> {reduxProfile.personalInfo?.lastName || 'Warik'}</div>
+                <div><strong>Gender:</strong> {reduxProfile.personalInfo?.gender || 'Male'}</div>
+                <div><strong>Date of Birth:</strong> {reduxProfile.personalInfo?.dob || 'NA'}</div>
+                <div><strong>Place of Birth:</strong> {reduxProfile.personalInfo?.placeOfBirth || 'NA'}</div>
+                <div><strong>Blood Group:</strong> {reduxProfile.personalInfo?.bloodGroup || 'NA'}</div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+                <div><strong>Current Street:</strong> {reduxProfile.addressInfo?.currentStreet || 'NA'}</div>
+                <div><strong>City:</strong> {reduxProfile.addressInfo?.currentCity || 'NA'}</div>
+                <div><strong>District:</strong> {reduxProfile.addressInfo?.currentDistrict || 'NA'}</div>
+                <div><strong>State:</strong> {reduxProfile.addressInfo?.currentState || 'NA'}</div>
+                <div><strong>Country:</strong> {reduxProfile.addressInfo?.currentCountry || 'NA'}</div>
+                <div><strong>Pin Code:</strong> {reduxProfile.addressInfo?.currentPin || 'NA'}</div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <strong>Permanent Address:</strong> {reduxProfile.addressInfo?.permanentStreet || 'Same as current'}
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div><strong>Total Family Members:</strong> {familyMembers.length}</div>
+                <div>
+                  <strong>Members List:</strong>{' '}
+                  {familyMembers.map(m => `${m.name} (${m.relation})`).join(', ') || 'No members added'}
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+                <div><strong>Mobile Number:</strong> {reduxProfile.contactInfo?.mobile || 'NA'}</div>
+                <div><strong>Work Email:</strong> {reduxProfile.contactInfo?.workEmail || 'NA'}</div>
+                <div><strong>Personal Email:</strong> {reduxProfile.contactInfo?.personalEmail || 'NA'}</div>
+                <div><strong>Emergency Contact:</strong> {reduxProfile.contactInfo?.emergencyName || 'NA'} ({reduxProfile.contactInfo?.emergencyRelation || 'NA'})</div>
+                <div><strong>Emergency Phone:</strong> {reduxProfile.contactInfo?.emergencyPhone || 'NA'}</div>
+              </div>
+            )}
           </div>
 
           {/* Stepper Navigation Buttons */}
