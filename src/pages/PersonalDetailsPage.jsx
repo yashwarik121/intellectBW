@@ -24,8 +24,9 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   // Retrieve data from Redux
   const reduxProfile = useSelector((state) => state.profile);
 
-  // Single Master Form for Multi-Stepper
+  // Single Master Form for Multi-Stepper (shouldUnregister: false preserves input values across unmounted steps)
   const { register, handleSubmit, trigger, watch, setValue, reset, getValues, formState: { errors } } = useForm({
+    shouldUnregister: false,
     defaultValues: {
       ...reduxProfile.personalInfo,
       ...reduxProfile.addressInfo,
@@ -42,60 +43,57 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
     });
   }, []); // Run on mount
 
-  // Real-time live synchronization: Update Redux store instantly as user types in any input field (Name, City, etc.)
-  React.useEffect(() => {
-    const subscription = watch((value) => {
-      const firstName = value.firstName ?? reduxProfile.personalInfo?.firstName ?? '';
-      const lastName = value.lastName ?? reduxProfile.personalInfo?.lastName ?? '';
-      const name = `${firstName} ${lastName}`.trim() || reduxProfile.name;
+  // Real-time live synchronization helper: Dispatches updates to Redux as user types
+  const handleLiveSync = () => {
+    const value = getValues();
+    const firstName = value.firstName ?? reduxProfile.personalInfo?.firstName ?? '';
+    const lastName = value.lastName ?? reduxProfile.personalInfo?.lastName ?? '';
+    const name = `${firstName} ${lastName}`.trim() || reduxProfile.name;
 
-      const updatedProfile = {
-        ...reduxProfile,
-        name: name,
-        personalInfo: {
-          ...reduxProfile.personalInfo,
-          title: value.title ?? reduxProfile.personalInfo?.title,
-          gender: value.gender ?? reduxProfile.personalInfo?.gender,
-          firstName: firstName,
-          lastName: lastName,
-          dob: value.dob ?? reduxProfile.personalInfo?.dob,
-          placeOfBirth: value.placeOfBirth ?? reduxProfile.personalInfo?.placeOfBirth,
-          nationality: value.nationality ?? reduxProfile.personalInfo?.nationality,
-          bloodGroup: value.bloodGroup ?? reduxProfile.personalInfo?.bloodGroup,
-          maritalStatus: value.maritalStatus ?? reduxProfile.personalInfo?.maritalStatus,
-          children: value.children ?? reduxProfile.personalInfo?.children
-        },
-        addressInfo: {
-          ...reduxProfile.addressInfo,
-          currentStreet: value.currentStreet ?? reduxProfile.addressInfo?.currentStreet,
-          currentLine2: value.currentLine2 ?? reduxProfile.addressInfo?.currentLine2,
-          currentCity: value.currentCity ?? reduxProfile.addressInfo?.currentCity,
-          currentDistrict: value.currentDistrict ?? reduxProfile.addressInfo?.currentDistrict,
-          currentState: value.currentState ?? reduxProfile.addressInfo?.currentState,
-          currentCountry: value.currentCountry ?? reduxProfile.addressInfo?.currentCountry,
-          currentPin: value.currentPin ?? reduxProfile.addressInfo?.currentPin,
-          sameAsAbove: value.sameAsAbove ?? reduxProfile.addressInfo?.sameAsAbove,
-          permanentStreet: value.permanentStreet ?? reduxProfile.addressInfo?.permanentStreet,
-          permanentLine2: value.permanentLine2 ?? reduxProfile.addressInfo?.permanentLine2,
-          permanentCity: value.permanentCity ?? reduxProfile.addressInfo?.permanentCity,
-          permanentDistrict: value.permanentDistrict ?? reduxProfile.addressInfo?.permanentDistrict
-        },
-        contactInfo: {
-          ...reduxProfile.contactInfo,
-          mobile: value.mobile ?? reduxProfile.contactInfo?.mobile,
-          personalEmail: value.personalEmail ?? reduxProfile.contactInfo?.personalEmail,
-          workEmail: value.workEmail ?? reduxProfile.contactInfo?.workEmail,
-          emergencyName: value.emergencyName ?? reduxProfile.contactInfo?.emergencyName,
-          emergencyRelation: value.emergencyRelation ?? reduxProfile.contactInfo?.emergencyRelation,
-          emergencyPhone: value.emergencyPhone ?? reduxProfile.contactInfo?.emergencyPhone
-        }
-      };
+    const updatedProfile = {
+      ...reduxProfile,
+      name: name,
+      personalInfo: {
+        ...reduxProfile.personalInfo,
+        title: value.title ?? reduxProfile.personalInfo?.title,
+        gender: value.gender ?? reduxProfile.personalInfo?.gender,
+        firstName: firstName,
+        lastName: lastName,
+        dob: value.dob ?? reduxProfile.personalInfo?.dob,
+        placeOfBirth: value.placeOfBirth ?? reduxProfile.personalInfo?.placeOfBirth,
+        nationality: value.nationality ?? reduxProfile.personalInfo?.nationality,
+        bloodGroup: value.bloodGroup ?? reduxProfile.personalInfo?.bloodGroup,
+        maritalStatus: value.maritalStatus ?? reduxProfile.personalInfo?.maritalStatus,
+        children: value.children ?? reduxProfile.personalInfo?.children
+      },
+      addressInfo: {
+        ...reduxProfile.addressInfo,
+        currentStreet: value.currentStreet ?? reduxProfile.addressInfo?.currentStreet,
+        currentLine2: value.currentLine2 ?? reduxProfile.addressInfo?.currentLine2,
+        currentCity: value.currentCity ?? reduxProfile.addressInfo?.currentCity,
+        currentDistrict: value.currentDistrict ?? reduxProfile.addressInfo?.currentDistrict,
+        currentState: value.currentState ?? reduxProfile.addressInfo?.currentState,
+        currentCountry: value.currentCountry ?? reduxProfile.addressInfo?.currentCountry,
+        currentPin: value.currentPin ?? reduxProfile.addressInfo?.currentPin,
+        sameAsAbove: value.sameAsAbove ?? reduxProfile.addressInfo?.sameAsAbove,
+        permanentStreet: value.permanentStreet ?? reduxProfile.addressInfo?.permanentStreet,
+        permanentLine2: value.permanentLine2 ?? reduxProfile.addressInfo?.permanentLine2,
+        permanentCity: value.permanentCity ?? reduxProfile.addressInfo?.permanentCity,
+        permanentDistrict: value.permanentDistrict ?? reduxProfile.addressInfo?.permanentDistrict
+      },
+      contactInfo: {
+        ...reduxProfile.contactInfo,
+        mobile: value.mobile ?? reduxProfile.contactInfo?.mobile,
+        personalEmail: value.personalEmail ?? reduxProfile.contactInfo?.personalEmail,
+        workEmail: value.workEmail ?? reduxProfile.contactInfo?.workEmail,
+        emergencyName: value.emergencyName ?? reduxProfile.contactInfo?.emergencyName,
+        emergencyRelation: value.emergencyRelation ?? reduxProfile.contactInfo?.emergencyRelation,
+        emergencyPhone: value.emergencyPhone ?? reduxProfile.contactInfo?.emergencyPhone
+      }
+    };
 
-      onSaveProfile(updatedProfile);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [watch, onSaveProfile, reduxProfile]);
+    onSaveProfile(updatedProfile);
+  };
 
   // Modal form
   const { register: regFamilyModal, handleSubmit: handleFamilyModalSubmit, reset: resetFamilyModal } = useForm({
@@ -410,7 +408,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
         </div>
 
         {/* Master Form Wrapper */}
-        <form onSubmit={handleSubmit(onSubmitAll)}>
+        <form onSubmit={handleSubmit(onSubmitAll)} onInput={handleLiveSync} onChange={handleLiveSync}>
           
           {/* Step 1: Personal Info */}
           {step === 1 && (
