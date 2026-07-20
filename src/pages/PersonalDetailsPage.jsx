@@ -33,14 +33,69 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
     }
   });
 
-  // Synchronize form default values when Redux store updates
+  // Synchronize form default values on mount
   React.useEffect(() => {
     reset({
       ...reduxProfile.personalInfo,
       ...reduxProfile.addressInfo,
       ...reduxProfile.contactInfo
     });
-  }, [reduxProfile, reset]);
+  }, []); // Run on mount
+
+  // Real-time live synchronization: Update Redux store instantly as user types in any input field (Name, City, etc.)
+  React.useEffect(() => {
+    const subscription = watch((value) => {
+      const firstName = value.firstName ?? reduxProfile.personalInfo?.firstName ?? '';
+      const lastName = value.lastName ?? reduxProfile.personalInfo?.lastName ?? '';
+      const name = `${firstName} ${lastName}`.trim() || reduxProfile.name;
+
+      const updatedProfile = {
+        ...reduxProfile,
+        name: name,
+        personalInfo: {
+          ...reduxProfile.personalInfo,
+          title: value.title ?? reduxProfile.personalInfo?.title,
+          gender: value.gender ?? reduxProfile.personalInfo?.gender,
+          firstName: firstName,
+          lastName: lastName,
+          dob: value.dob ?? reduxProfile.personalInfo?.dob,
+          placeOfBirth: value.placeOfBirth ?? reduxProfile.personalInfo?.placeOfBirth,
+          nationality: value.nationality ?? reduxProfile.personalInfo?.nationality,
+          bloodGroup: value.bloodGroup ?? reduxProfile.personalInfo?.bloodGroup,
+          maritalStatus: value.maritalStatus ?? reduxProfile.personalInfo?.maritalStatus,
+          children: value.children ?? reduxProfile.personalInfo?.children
+        },
+        addressInfo: {
+          ...reduxProfile.addressInfo,
+          currentStreet: value.currentStreet ?? reduxProfile.addressInfo?.currentStreet,
+          currentLine2: value.currentLine2 ?? reduxProfile.addressInfo?.currentLine2,
+          currentCity: value.currentCity ?? reduxProfile.addressInfo?.currentCity,
+          currentDistrict: value.currentDistrict ?? reduxProfile.addressInfo?.currentDistrict,
+          currentState: value.currentState ?? reduxProfile.addressInfo?.currentState,
+          currentCountry: value.currentCountry ?? reduxProfile.addressInfo?.currentCountry,
+          currentPin: value.currentPin ?? reduxProfile.addressInfo?.currentPin,
+          sameAsAbove: value.sameAsAbove ?? reduxProfile.addressInfo?.sameAsAbove,
+          permanentStreet: value.permanentStreet ?? reduxProfile.addressInfo?.permanentStreet,
+          permanentLine2: value.permanentLine2 ?? reduxProfile.addressInfo?.permanentLine2,
+          permanentCity: value.permanentCity ?? reduxProfile.addressInfo?.permanentCity,
+          permanentDistrict: value.permanentDistrict ?? reduxProfile.addressInfo?.permanentDistrict
+        },
+        contactInfo: {
+          ...reduxProfile.contactInfo,
+          mobile: value.mobile ?? reduxProfile.contactInfo?.mobile,
+          personalEmail: value.personalEmail ?? reduxProfile.contactInfo?.personalEmail,
+          workEmail: value.workEmail ?? reduxProfile.contactInfo?.workEmail,
+          emergencyName: value.emergencyName ?? reduxProfile.contactInfo?.emergencyName,
+          emergencyRelation: value.emergencyRelation ?? reduxProfile.contactInfo?.emergencyRelation,
+          emergencyPhone: value.emergencyPhone ?? reduxProfile.contactInfo?.emergencyPhone
+        }
+      };
+
+      onSaveProfile(updatedProfile);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, onSaveProfile, reduxProfile]);
 
   // Modal form
   const { register: regFamilyModal, handleSubmit: handleFamilyModalSubmit, reset: resetFamilyModal } = useForm({
