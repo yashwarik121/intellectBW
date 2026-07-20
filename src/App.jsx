@@ -178,13 +178,15 @@ function App() {
   };
 
   const handleSaveProfile = (updatedData) => {
-    // POST API 2: Mock saving profile details (202 Accepted)
+    // Immediately update Redux store synchronously
+    dispatch(updateProfile(updatedData));
+
+    // Async mock API call in background
     apiRequest('/202', 'POST', updatedData)
       .then(() => {
-        dispatch(updateProfile(updatedData));
         console.log('Mock POST 2: Profile details saved (202 Accepted)');
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.log('Mock API background notice:', err.message));
   };
 
   const handleSidebarClick = (itemId) => {

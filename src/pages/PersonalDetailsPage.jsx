@@ -1,11 +1,12 @@
-// Personal Details Page - Refactored to React Hook Form Multi-Stepper Form
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateProfile } from '../redux/profileSlice';
 import { Mail, Phone, Clock, X, Plus, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 function PersonalDetailsPage({ profileData, onSaveProfile }) {
+  const dispatch = useDispatch();
   const [step, setStep] = useState(1); // Steps 1 to 4
   const [familyMembers, setFamilyMembers] = useState([
     {
@@ -92,7 +93,8 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
       }
     };
 
-    onSaveProfile(updatedProfile);
+    dispatch(updateProfile(updatedProfile));
+    if (onSaveProfile) onSaveProfile(updatedProfile);
   };
 
   // Modal form
