@@ -653,6 +653,27 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
             </div>
           )}
 
+          {/* Redux Store Value Indicator */}
+          <div style={{
+            marginTop: '20px',
+            padding: '16px',
+            background: 'var(--bg-main)',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            fontSize: '13px',
+            color: 'var(--text-main)',
+            boxShadow: 'var(--shadow-sm)',
+            marginBottom: '16px'
+          }}>
+            <h4 style={{ fontWeight: '700', marginBottom: '8px', color: '#b08b00' }}>
+              Redux Store Value (Tab {step}):
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div><strong>Profile Name:</strong> {reduxProfile.name}</div>
+              <div><strong>Date of Birth:</strong> {reduxProfile.personalInfo?.dob || 'NA'}</div>
+            </div>
+          </div>
+
           {/* Stepper Navigation Buttons */}
           <div style={{ 
             display: 'flex', 
