@@ -25,7 +25,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   const reduxProfile = useSelector((state) => state.profile);
 
   // Single Master Form for Multi-Stepper
-  const { register, handleSubmit, trigger, watch, setValue, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, trigger, watch, setValue, reset, getValues, formState: { errors } } = useForm({
     defaultValues: {
       ...reduxProfile.personalInfo,
       ...reduxProfile.addressInfo,
@@ -76,6 +76,50 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
     console.log(`[Tab ${step}] Current Redux Profile Data:`, reduxProfile);
   }, [step, reduxProfile]);
 
+  // Save current step data to Redux helper
+  const handleSaveStepData = () => {
+    const data = getValues();
+    const updatedProfile = {
+      ...profileData,
+      name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || profileData.name,
+      personalInfo: {
+        title: data.title,
+        gender: data.gender,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dob: data.dob,
+        placeOfBirth: data.placeOfBirth,
+        nationality: data.nationality,
+        bloodGroup: data.bloodGroup,
+        maritalStatus: data.maritalStatus,
+        children: data.children
+      },
+      addressInfo: {
+        currentStreet: data.currentStreet,
+        currentLine2: data.currentLine2,
+        currentCity: data.currentCity,
+        currentDistrict: data.currentDistrict,
+        currentState: data.currentState,
+        currentCountry: data.currentCountry,
+        currentPin: data.currentPin,
+        sameAsAbove: data.sameAsAbove,
+        permanentStreet: data.permanentStreet,
+        permanentLine2: data.permanentLine2,
+        permanentCity: data.permanentCity,
+        permanentDistrict: data.permanentDistrict
+      },
+      contactInfo: {
+        mobile: data.mobile,
+        personalEmail: data.personalEmail,
+        workEmail: data.workEmail,
+        emergencyName: data.emergencyName,
+        emergencyRelation: data.emergencyRelation,
+        emergencyPhone: data.emergencyPhone
+      }
+    };
+    onSaveProfile(updatedProfile);
+  };
+
   // Validation function per step
   const validateStep = async (currentStep) => {
     let fields = [];
@@ -96,11 +140,13 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
   const handleNext = async () => {
     const isValid = await validateStep(step);
     if (isValid) {
+      handleSaveStepData(); // Update redux state on next click
       setStep(step + 1);
     }
   };
 
   const handleBack = () => {
+    handleSaveStepData(); // Ensure state is saved when going back too
     setStep(step - 1);
   };
 
@@ -113,6 +159,7 @@ function PersonalDetailsPage({ profileData, onSaveProfile }) {
         if (!isValid) return; // Stop if validation fails
       }
     }
+    handleSaveStepData(); // Update redux state on direct tab click
     setStep(targetStep);
   };
 
